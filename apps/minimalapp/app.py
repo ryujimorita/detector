@@ -21,7 +21,7 @@ with open("secret.json", "r") as file:
     cred_data = json.load(file)
     flask_secret_key = cred_data["flask_secret_key"]
 
-app.config["SECRET_KEY"] = flask_secret_key  # "2AZSMss3p5QPbcY2hBsJ"
+app.config["SECRET_KEY"] = flask_secret_key
 
 # Set log level
 app.logger.setLevel(logging.DEBUG)
