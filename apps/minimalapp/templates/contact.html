@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Contact Form</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
+  </head>
+
+  <body>
+    <h2>Contact Form</h2>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <ul>
+      {% for message in messages %}
+      <li class="flash">{{ message }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+
+    <form
+       action="{{ url_for('contact_complete') }}"
+       method="POST"
+       novalidate="novalidate"
+    >
+      <table>
+        <tr>
+            <td>User Name</td>
+            <td>
+                <input 
+                  type="text" 
+                  name="username" 
+                  value="{{ username }}" 
+                  placeholder="User name"
+                />
+            </td>
+        </tr>
+        <tr>
+            <td>Email Address</td>
+            <td>
+                <input 
+                  type="text" 
+                  name="email" 
+                  value="{{ email }}" 
+                  placeholder="Email Address"
+                />
+            </td>
+        </tr>
+        <tr>
+            <td>Inquiry Details</td>
+            <td>
+                <textarea name="description" placeholder="Inquiry Details">{{ description }}</textarea>
+            </td>
+        </tr>
+      </table>
+      <input type="submit" value="Inquiry" />
+    </form>
+  </body>
+</html>
