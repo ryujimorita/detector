@@ -18,7 +18,9 @@ from flask import (
 from flask_debugtoolbar import DebugToolbarExtension
 from flask_mail import Mail, Message
 
+# Create a Flask instance
 app = Flask(__name__)
+
 
 # Load flask secret key from another file and add it to app config
 with open("secret.json", "r") as file:
