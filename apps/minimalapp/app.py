@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 
 from email_validator import EmailNotValidError, validate_email
 from flask import (
@@ -7,12 +8,15 @@ from flask import (
     current_app,
     flash,
     g,
+    make_response,
     redirect,
     render_template,
     request,
+    session,
     url_for,
 )
 from flask_debugtoolbar import DebugToolbarExtension
+from flask_mail import Mail, Message
 
 app = Flask(__name__)
 
@@ -20,6 +24,8 @@ app = Flask(__name__)
 with open("secret.json", "r") as file:
     cred_data = json.load(file)
     flask_secret_key = cred_data["flask_secret_key"]
+    gmail_username = cred_data["gmail_username"]
+    gmail_app_password = cred_data["gmail_app_password"]
 
 app.config["SECRET_KEY"] = flask_secret_key
 
@@ -32,10 +38,30 @@ app.config["DEBUG_TB_INTERCEPT_REDIRECTS"] = False
 # Set the app in DebugToolbarExtension
 toolbar = DebugToolbarExtension(app)
 
+# Email
+app.config["MAIL_SERVER"] = os.environ.get("MAIL_SERVER")
+app.config["MAIL_PORT"] = os.environ.get("MAIL_PORT")
+app.config["MAIL_USE_TLS"] = os.environ.get("MAIL_USE_TLS")
+app.config["MAIL_USERNAME"] = os.environ.get("MAIL_USERNAME")
+app.config["MAIL_PASSWORD"] = os.environ.get("MAIL_PASSWORD")
+app.config["MAIL_DEFAULT_SENDER"] = os.environ.get("MAIL_DEFAULT_SENDER")
+
+
+def send_email(recipient: str, subject: str, template: str, **kwargs) -> None:
+    """Send an email after submit the contact form."""
+    msg = Message(subject, recipients=[recipient])
+    msg.body = render_template(template + ".txt", **kwargs)
+    msg.html = render_template(template + ".html", **kwargs)
+    mail.send(msg)
+
+
+# Wrap app with flask-mail
+mail = Mail(app)
+
 
 @app.route("/")
 def index():
-    return "Hello, Flaskbook!"
+    return "Hello!"
 
 
 @app.route("/hello/<name>", methods=["GET"], endpoint="hello-endpoint")
@@ -48,20 +74,19 @@ def show_name(name):
     return render_template("index.html", name=name)
 
 
-with app.test_request_context():
-    print(url_for("index"))
-    print(url_for("hello-endpoint", name="world"))
-    print(url_for("show_name", name="ichiro", page="1"))
-    print(url_for("static", filename="style.css"))
-
-
-with app.test_request_context("/users?updated=true"):
-    print(request.args.get("updated"))
-
 # Contact Form
 @app.route("/contact")
 def contact():
-    return render_template("contact.html")
+    # Get response object
+    response = make_response(render_template("contact.html"))
+
+    # Set cookie
+    response.set_cookie("flask key", "flask value")
+
+    # Session
+    session["username"] = "John Doe"
+
+    return response
 
 
 # Contact Complete
@@ -97,7 +122,14 @@ def contact_complete():
         if not is_valid:
             return redirect(url_for("contact"))
 
-        # Send an email here
+        # Send an email
+        send_email(
+            recipient=email,
+            subject="Thank you for your inquiry!",
+            template="contact_mail",
+            username=username,
+            description=description,
+        )
 
         # Redirect to contact endpoint
         flash("Confirmation email was sent to your email address. Thank you!")
